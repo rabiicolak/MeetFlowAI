@@ -14,17 +14,17 @@ namespace MeetFlow.Web.Services
 
             var lowerText = meetingText.ToLowerInvariant();
 
-            // Katılımcı Çıkarımı
-            var nameRegex = new Regex(@"\b([a-zçğıöşü]+)\b", RegexOptions.IgnoreCase);
-            var possibleNames = new[] { "esma", "rabia", "hatice", "arda", "mehmet", "ali", "ayşe", "ahmet" };
-            
-            var matches = nameRegex.Matches(lowerText);
-            foreach (Match match in matches)
+            // 4. İki kelimeli kişi adlarını yakala ve katılımcı listesini doldur
+            var knownNames = new[] { 
+                "yeşim ayma", "rabia çorak", "esmanur", "esma", "rabia", 
+                "hatice", "arda", "mehmet", "ali", "ayşe", "ahmet", "yeşim" 
+            };
+
+            foreach (var name in knownNames)
             {
-                var word = match.Groups[1].Value;
-                if (possibleNames.Contains(word))
+                if (lowerFragmentMatcher(lowerText, name))
                 {
-                    var normalized = char.ToUpperInvariant(word[0]) + word.Substring(1);
+                    var normalized = CapitalizeName(name);
                     if (!result.Participants.Contains(normalized))
                     {
                         result.Participants.Add(normalized);
@@ -32,68 +32,119 @@ namespace MeetFlow.Web.Services
                 }
             }
 
-            var separators = new[] { ".", ",", ";", "\n", " ve ", " ama ", " fakat ", " ayrıca " };
+            // 5. & 6. Virgül ve bağlaçlarla ayırarak her parçayı ayrı görev olarak değerlendir
+            var separators = new[] { ".", ",", ";", "\n", " ve ", " ardından ", " sonra " };
             var fragments = meetingText.Split(separators, StringSplitOptions.RemoveEmptyEntries)
                                        .Select(f => f.Trim())
                                        .Where(f => f.Length > 0)
                                        .ToList();
 
-            var taskVerbs = new[] { "doldur", "doldursun", "hazırla", "hazırlasın", "hallet", "yap", "yapsın", "tamamla", "tamamlasın" };
-            var decisionKeywords = new[] { "karar", "onaylandı", "kabul edildi", "başlatılsın", "açılsın", "kullanılacak", "canlıya alınacak" };
-            var riskKeywords = new[] { "risk", "sorun", "hata", "gecikme", "yetişmeyebilir", "problem", "kesinti" };
+            // 2. Emir kiplerini görev olarak algıla
+            var taskVerbs = new Dictionary<string, string> 
+            {
+                { "yaz", "yazacak" },
+                { "gönder", "gönderecek" },
+                { "hallet", "halledecek" },
+                { "tamamla", "tamamlayacak" },
+                { "hazırla", "hazırlayacak" },
+                { "kontrol et", "kontrol edecek" },
+                { "test et", "test edecek" },
+                { "ilgilen", "ilgilenecek" },
+                { "başlat", "başlatacak" }
+            };
+
             var deadlineKeywords = new[] { "yarın", "bugün", "cuma", "pazartesi", "bu hafta", "ay sonuna kadar" };
+            var riskKeywords = new[] { "risk", "sorun", "hata", "gecikme", "yetişmeyebilir", "problem", "kesinti" };
 
             foreach (var fragment in fragments)
             {
                 var lowerFragment = fragment.ToLowerInvariant();
 
-                // Görev Çıkarımı
-                foreach (var participant in result.Participants)
+                // Görev ve Karar Çıkarımı
+                var foundVerb = taskVerbs.FirstOrDefault(v => lowerFragment.EndsWith(v.Key) || lowerFragment.Contains(v.Key + " "));
+                if (foundVerb.Key != null)
                 {
-                    if (lowerFragment.Contains(participant.ToLowerInvariant()))
+                    string assignee = "Belirsiz";
+                    foreach (var name in knownNames)
                     {
-                        foreach (var verb in taskVerbs)
+                        if (lowerFragment.Contains(name))
                         {
-                            if (lowerFragment.Contains(verb))
-                            {
-                                var taskTitle = char.ToUpperInvariant(verb[0]) + verb.Substring(1) + " işini tamamla";
-                                if (lowerFragment.Contains("rapor")) taskTitle = "Raporları doldur";
-                                else if (lowerFragment.Contains("sunum")) taskTitle = "Sunumu hazırla";
-                                else if (lowerFragment.Contains("finans")) taskTitle = "Finansal işleri hallet";
-
-                                var tDeadline = "Belirsiz";
-                                foreach (var dl in deadlineKeywords)
-                                {
-                                    if (lowerFragment.Contains(dl))
-                                    {
-                                        tDeadline = char.ToUpperInvariant(dl[0]) + dl.Substring(1);
-                                        break;
-                                    }
-                                }
-
-                                var tPriority = lowerFragment.Contains("önemli") || lowerFragment.Contains("acil") ? "Yüksek" : "Normal";
-
-                                if (!result.Tasks.Any(t => t.Title == taskTitle && t.Assignee == participant))
-                                {
-                                    result.Tasks.Add(new TaskItemViewModel 
-                                    { 
-                                        Title = taskTitle, 
-                                        Assignee = participant, 
-                                        Deadline = tDeadline, 
-                                        Priority = tPriority 
-                                    });
-                                }
-                            }
+                            assignee = CapitalizeName(name);
+                            if (!result.Participants.Contains(assignee))
+                                result.Participants.Add(assignee);
+                            break;
                         }
                     }
-                }
 
-                // Karar Tespiti
-                if (decisionKeywords.Any(k => lowerFragment.Contains(k)))
-                {
-                    var decisionSentence = char.ToUpperInvariant(fragment[0]) + fragment.Substring(1);
-                    if (!decisionSentence.EndsWith(".")) decisionSentence += ".";
-                    result.Decisions.Add(decisionSentence);
+                    var actionText = lowerFragment;
+                    if (assignee != "Belirsiz")
+                    {
+                        actionText = actionText.Replace(assignee.ToLowerInvariant(), "").Trim();
+                    }
+
+                    // 3. İsim + iş + fiil kalıbını yakala
+                    actionText = ReplaceLastOccurrence(actionText, foundVerb.Key, foundVerb.Value).Trim();
+
+                    // Özel case düzeltmesi (Esmanur kendi hallet -> kendi görevini halledecek)
+                    if (actionText.Contains("kendi halledecek")) 
+                    {
+                        actionText = actionText.Replace("kendi halledecek", "kendi görevini halledecek");
+                    }
+
+                    // Görev oluştur (7. Görevleri tek cümlede birleştirme; her görev ayrı liste elemanı olsun)
+                    var taskTitle = "";
+                    if (assignee != "Belirsiz")
+                    {
+                        taskTitle = $"{assignee} {actionText}.";
+                    }
+                    else
+                    {
+                        taskTitle = char.ToUpperInvariant(actionText[0]) + actionText.Substring(1) + ".";
+                    }
+
+                    var tDeadline = "Belirsiz";
+                    foreach (var dl in deadlineKeywords)
+                    {
+                        if (lowerFragment.Contains(dl))
+                        {
+                            tDeadline = char.ToUpperInvariant(dl[0]) + dl.Substring(1);
+                            if (!result.Deadlines.Contains(tDeadline)) result.Deadlines.Add(tDeadline);
+                            break;
+                        }
+                    }
+
+                    var tPriority = lowerFragment.Contains("önemli") || lowerFragment.Contains("acil") ? "Yüksek" : "Normal";
+
+                    if (!result.Tasks.Any(t => t.Title == taskTitle))
+                    {
+                        result.Tasks.Add(new TaskItemViewModel 
+                        { 
+                            Title = taskTitle, 
+                            Assignee = assignee, 
+                            Deadline = tDeadline, 
+                            Priority = tPriority 
+                        });
+                    }
+
+                    // 10. Karar kısmında görevlerden türetilmiş kısa kararlar üret
+                    var decisionStr = actionText.Replace("ları ", "ların ").Replace("leri ", "lerin ");
+                    
+                    if (foundVerb.Key == "yaz") decisionStr = decisionStr.Replace("yazacak", "yazılması kararlaştırıldı");
+                    else if (foundVerb.Key == "gönder") decisionStr = decisionStr.Replace("gönderecek", "gönderilmesi kararlaştırıldı");
+                    else if (foundVerb.Key == "hallet") decisionStr = decisionStr.Replace("halledecek", "halledilmesi kararlaştırıldı");
+                    else if (foundVerb.Key == "tamamla") decisionStr = decisionStr.Replace("tamamlayacak", "tamamlanması kararlaştırıldı");
+                    else if (foundVerb.Key == "hazırla") decisionStr = decisionStr.Replace("hazırlayacak", "hazırlanması kararlaştırıldı");
+                    else if (foundVerb.Key == "kontrol et") decisionStr = decisionStr.Replace("kontrol edecek", "kontrol edilmesi kararlaştırıldı");
+                    else if (foundVerb.Key == "test et") decisionStr = decisionStr.Replace("test edecek", "test edilmesi kararlaştırıldı");
+                    else if (foundVerb.Key == "ilgilen") decisionStr = decisionStr.Replace("ilgilenecek", "ilgilenilmesi kararlaştırıldı");
+                    else if (foundVerb.Key == "başlat") decisionStr = decisionStr.Replace("başlatacak", "başlatılması kararlaştırıldı");
+
+                    if (!string.IsNullOrEmpty(decisionStr))
+                    {
+                        decisionStr = char.ToUpperInvariant(decisionStr[0]) + decisionStr.Substring(1) + ".";
+                        if (!result.Decisions.Contains(decisionStr))
+                            result.Decisions.Add(decisionStr);
+                    }
                 }
 
                 // Risk Tespiti
@@ -103,22 +154,14 @@ namespace MeetFlow.Web.Services
                     if (!riskSentence.EndsWith(".")) riskSentence += ".";
                     result.Risks.Add(riskSentence);
                 }
-
-                // Deadline Tespiti
-                foreach (var deadline in deadlineKeywords)
-                {
-                    if (lowerFragment.Contains(deadline) && !result.Deadlines.Contains(char.ToUpperInvariant(deadline[0]) + deadline.Substring(1)))
-                    {
-                        result.Deadlines.Add(char.ToUpperInvariant(deadline[0]) + deadline.Substring(1));
-                    }
-                }
             }
 
             // Summary, NextStep ve Sabit Değerler
-            result.QualityScore = 85;
-            result.RiskScore = result.Risks.Count > 0 ? 4 : 0;
-            result.WorkloadStatus = result.Tasks.Count > 2 ? "Çok Yoğun" : (result.Tasks.Count > 0 ? "Normal" : "Boş");
+            result.QualityScore = 90;
+            result.RiskScore = result.Risks.Count > 0 ? 5 : 0;
+            result.WorkloadStatus = result.Tasks.Count > 2 ? "Yoğun" : (result.Tasks.Count > 0 ? "Dengeli" : "Boş");
             
+            // 9. Eğer görev varsa "Belirgin görev yok" yazma
             if (result.Tasks.Count == 0 && result.Decisions.Count == 0 && result.Risks.Count == 0)
             {
                 result.Summary = "Bu metinde belirgin görev, karar veya risk tespit edilemedi.";
@@ -126,15 +169,29 @@ namespace MeetFlow.Web.Services
             }
             else
             {
-                result.Summary = $"Toplantı notunda {result.Tasks.Count} görev ve {result.Deadlines.Count} deadline çıkarılmıştır.";
-                if (result.Participants.Contains("Esma") && result.Tasks.Any(t => t.Title.Contains("Rapor")))
-                {
-                     result.Summary = "Toplantı notunda yarına kadar Esma’nın raporları doldurması gerektiği belirtilmiştir.";
-                }
+                result.Summary = $"Toplantıda görev dağılımı yapıldı. Toplam {result.Tasks.Count} görev ve {result.Decisions.Count} karar çıkarıldı.";
                 result.NextStep = result.Tasks.Count > 0 ? "Görevlerin tamamlanması takip edilecek." : "Değerlendirme toplantısı planlanacak.";
             }
 
             return Task.FromResult(result);
+        }
+
+        private bool lowerFragmentMatcher(string text, string search)
+        {
+            return text.Contains(search);
+        }
+
+        private string CapitalizeName(string name)
+        {
+            return string.Join(" ", name.Split(' ').Select(w => char.ToUpperInvariant(w[0]) + w.Substring(1)));
+        }
+
+        private string ReplaceLastOccurrence(string source, string find, string replace)
+        {
+            int place = source.LastIndexOf(find);
+            if (place == -1)
+                return source;
+            return source.Remove(place, find.Length).Insert(place, replace);
         }
     }
 }
