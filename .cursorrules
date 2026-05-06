@@ -1,0 +1,6 @@
+# Cursor Editor Rules
+# This file contains project-specific instructions for the AI in Cursor.
+
+- Use ASP.NET Core MVC patterns.
+- Follow folder-based layered architecture inside the MeetFlow.Web project.
+- Write modern, clean C# 12 code targeting .NET 8.
