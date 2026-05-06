@@ -396,15 +396,11 @@
             }
         }
 
-        function analyzeMeeting() {
+        async function analyzeMeeting() {
             const text = document.getElementById('meetingText').value.trim();
             if(!text) {
                 alert("Lütfen analiz etmek için bir toplantı metni girin.");
                 return;
-            }
-
-            if (!currentMockData) {
-                currentMockData = scenarios['software'].mockData;
             }
 
             // Start animation & loading state
@@ -429,9 +425,20 @@
                 document.querySelector('.typing-text').innerText = loadingTexts[tIdx];
             }, 600);
 
-            setTimeout(() => {
+            try {
+                const response = await fetch('/Home/Analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ meetingText: text })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Analiz sırasında hata oluştu.");
+                }
+
+                const data = await response.json();
                 clearInterval(typingInterval);
-                populateResults(currentMockData);
+                populateResults(data);
                 
                 // Hide loading, show results with fade-in
                 document.getElementById('emptyState').style.display = 'none';
@@ -439,7 +446,11 @@
                 const resultsContainer = document.getElementById('resultsContainer');
                 resultsContainer.style.display = 'block';
                 resultsContainer.classList.add('fade-in');
-                
+            } catch (error) {
+                clearInterval(typingInterval);
+                console.error(error);
+                alert("Analiz başarısız oldu.");
+            } finally {
                 // Reset button
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-magic me-2"></i>Analiz Et';
@@ -450,7 +461,7 @@
                 document.getElementById('emptyStateText').innerText = "Analiz Sonucu Bekleniyor";
                 document.getElementById('emptyStateSubText').style.display = 'block';
                 document.getElementById('loadingProgressContainer').style.display = 'none';
-            }, 2500); // 2.5 sec for cooler animation
+            }
         }
 
         function populateResults(data) {
