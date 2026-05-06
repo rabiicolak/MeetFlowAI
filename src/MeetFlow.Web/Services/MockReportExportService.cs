@@ -18,7 +18,7 @@ namespace MeetFlow.Web.Services
             sb.AppendLine();
 
             sb.AppendLine("GÖREVLER:");
-            foreach (var item in analysis.ActionItems) sb.AppendLine($"- {item}");
+            foreach (var item in analysis.Tasks) sb.AppendLine($"- {item.Title}");
             sb.AppendLine();
 
             sb.AppendLine("RİSKLER:");
@@ -33,12 +33,11 @@ namespace MeetFlow.Web.Services
             sb.AppendLine(string.Join(", ", analysis.Participants));
             sb.AppendLine();
 
-            sb.AppendLine($"KALİTE SKORU: {analysis.MeetingQualityScore}/100");
+            sb.AppendLine($"KALİTE SKORU: {analysis.QualityScore}/100");
             sb.AppendLine($"RİSK SKORU: {analysis.RiskScore}/100");
-            sb.AppendLine($"VERİMLİLİK KAZANIMI: %{analysis.EfficiencyGainPercentage}");
             sb.AppendLine();
 
-            sb.AppendLine($"AI ÖNERİSİ:\n{analysis.FollowUpSuggestion}");
+            sb.AppendLine($"AI ÖNERİSİ:\n{analysis.NextStep}");
 
             return sb.ToString();
         }
@@ -56,7 +55,7 @@ namespace MeetFlow.Web.Services
             sb.AppendLine();
 
             sb.AppendLine("## 📋 Görevler");
-            foreach (var item in analysis.ActionItems) sb.AppendLine($"- [ ] {item}");
+            foreach (var item in analysis.Tasks) sb.AppendLine($"- [ ] {item.Title} (Sorumlu: {item.Assignee})");
             sb.AppendLine();
 
             sb.AppendLine("## ⚠️ Riskler");
@@ -71,12 +70,11 @@ namespace MeetFlow.Web.Services
             sb.AppendLine(string.Join(", ", analysis.Participants) + "\n");
 
             sb.AppendLine("## 📊 Skorlar");
-            sb.AppendLine($"- **Kalite Skoru:** {analysis.MeetingQualityScore}/100");
-            sb.AppendLine($"- **Risk Skoru:** {analysis.RiskScore}/100");
-            sb.AppendLine($"- **Verimlilik Kazanımı:** %{analysis.EfficiencyGainPercentage}\n");
+            sb.AppendLine($"- **Kalite Skoru:** {analysis.QualityScore}/100");
+            sb.AppendLine($"- **Risk Skoru:** {analysis.RiskScore}/100\n");
 
             sb.AppendLine("## 💡 AI Önerisi");
-            sb.AppendLine($"> {analysis.FollowUpSuggestion}");
+            sb.AppendLine($"> {analysis.NextStep}");
 
             return sb.ToString();
         }
@@ -102,7 +100,7 @@ namespace MeetFlow.Web.Services
 
             sb.AppendLine("<div class='card'>");
             sb.AppendLine("<h2>Görevler</h2><ul>");
-            foreach (var item in analysis.ActionItems) sb.AppendLine($"<li class='task'>{item}</li>");
+            foreach (var item in analysis.Tasks) sb.AppendLine($"<li class='task'>{item.Title} ({item.Assignee})</li>");
             sb.AppendLine("</ul></div>");
 
             sb.AppendLine("<div class='card'>");
@@ -112,14 +110,13 @@ namespace MeetFlow.Web.Services
 
             sb.AppendLine("<div class='card'>");
             sb.AppendLine("<h2>Metrikler</h2>");
-            sb.AppendLine($"<ul><li>Kalite Skoru: {analysis.MeetingQualityScore}/100</li>");
-            sb.AppendLine($"<li>Risk Skoru: {analysis.RiskScore}/100</li>");
-            sb.AppendLine($"<li>Verimlilik Kazanımı: %{analysis.EfficiencyGainPercentage}</li></ul>");
+            sb.AppendLine($"<ul><li>Kalite Skoru: {analysis.QualityScore}/100</li>");
+            sb.AppendLine($"<li>Risk Skoru: {analysis.RiskScore}/100</li></ul>");
             sb.AppendLine("</div>");
 
             sb.AppendLine("<div class='card' style='background-color:#f9f9f9;'>");
             sb.AppendLine("<h2>AI Önerisi</h2>");
-            sb.AppendLine($"<p><i>{analysis.FollowUpSuggestion}</i></p>");
+            sb.AppendLine($"<p><i>{analysis.NextStep}</i></p>");
             sb.AppendLine("</div>");
 
             sb.AppendLine("</body></html>");

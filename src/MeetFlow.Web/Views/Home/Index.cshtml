@@ -401,47 +401,59 @@
 
 
         function populateResults(data) {
-            document.getElementById('resSummary').innerText = data.summary;
-            document.getElementById('resNextStep').innerText = data.nextStep;
+            if (!data) return;
+            
+            document.getElementById('resSummary').innerText = data.summary ?? '';
+            document.getElementById('resNextStep').innerText = data.nextStep ?? '';
             
             // Risk Score
-            document.getElementById('resRiskScoreVal').innerText = data.riskScore.val + "/10";
-            document.getElementById('resRiskBadge').className = "badge mb-2 bg-" + data.riskScore.color;
-            document.getElementById('resRiskBadge').innerText = data.riskScore.text;
-            document.getElementById('resRiskProgress').className = "progress-bar bg-" + data.riskScore.color;
-            document.getElementById('resRiskProgress').style.width = (data.riskScore.val * 10) + "%";
+            let riskVal = data.riskScore ?? 0;
+            let riskColor = riskVal > 7 ? 'danger' : (riskVal > 4 ? 'warning' : 'success');
+            let riskText = riskVal > 7 ? 'Yüksek' : (riskVal > 4 ? 'Orta' : 'Düşük');
+            
+            document.getElementById('resRiskScoreVal').innerText = riskVal + "/10";
+            document.getElementById('resRiskBadge').className = "badge mb-2 bg-" + riskColor;
+            document.getElementById('resRiskBadge').innerText = riskText;
+            document.getElementById('resRiskProgress').className = "progress-bar bg-" + riskColor;
+            document.getElementById('resRiskProgress').style.width = (riskVal * 10) + "%";
 
             // Quality Score
-            document.getElementById('resQualityScore').innerText = data.qualityScore + "/100";
-            document.getElementById('resQualityProgress').style.width = data.qualityScore + "%";
-            let qColor = data.qualityScore > 80 ? 'success' : (data.qualityScore > 60 ? 'warning' : 'danger');
+            let qScore = data.qualityScore ?? 0;
+            document.getElementById('resQualityScore').innerText = qScore + "/100";
+            document.getElementById('resQualityProgress').style.width = qScore + "%";
+            let qColor = qScore > 80 ? 'success' : (qScore > 60 ? 'warning' : 'danger');
             document.getElementById('resQualityProgress').className = "progress-bar bg-" + qColor;
             document.getElementById('resQualityScore').className = "fw-bold mb-2 text-" + qColor;
 
-            document.getElementById('resWorkload').innerText = data.workload;
+            document.getElementById('resWorkload').innerText = data.workloadStatus ?? 'Bilinmiyor';
 
-            const makeList = (items, iconClass) => items.map(i => `<li class="mb-2"><i class="bi ${iconClass} text-muted me-2"></i>${i}</li>`).join('');
+            const makeList = (items, iconClass) => (items || []).map(i => `<li class="mb-2"><i class="bi ${iconClass} text-muted me-2"></i>${i}</li>`).join('');
             
-            document.getElementById('resInsights').innerHTML = makeList(data.insights, 'bi-stars text-warning');
+            // data.insights might not exist in backend response, use empty list if undefined
+            document.getElementById('resInsights').innerHTML = makeList(data.insights || [], 'bi-stars text-warning');
             document.getElementById('resDecisions').innerHTML = makeList(data.decisions, 'bi-arrow-right-short');
             document.getElementById('resRisks').innerHTML = makeList(data.risks, 'bi-exclamation-triangle text-danger');
             document.getElementById('resDeadlines').innerHTML = makeList(data.deadlines, 'bi-clock text-warning');
 
-            // Complex Tasks List
-            const taskHtml = data.tasks.map(t => `
+            // Tasks
+            const tasks = data.tasks || [];
+            const taskHtml = tasks.map(t => {
+                let prioClass = (t.priority === 'Yüksek' || t.priority === 'danger') ? 'danger' : ((t.priority === 'Normal' || t.priority === 'info') ? 'info' : 'secondary');
+                return `
                 <div class="task-item p-2 mb-1 d-flex align-items-start">
                     <i class="bi bi-square me-2 mt-1 text-muted"></i>
                     <div>
-                        <span class="d-block fw-bold mb-1">${t.text}</span>
-                        <span class="badge bg-secondary border me-1"><i class="bi bi-person me-1"></i>${t.owner}</span>
-                        <span class="badge bg-light text-dark border me-1"><i class="bi bi-calendar me-1"></i>${t.deadline}</span>
-                        <span class="badge bg-${t.priority} bg-opacity-25 text-${t.priority} border border-${t.priority}">Öncelikli</span>
+                        <span class="d-block fw-bold mb-1">${t.title ?? ''}</span>
+                        <span class="badge bg-secondary border me-1"><i class="bi bi-person me-1"></i>${t.assignee ?? ''}</span>
+                        <span class="badge bg-light text-dark border me-1"><i class="bi bi-calendar me-1"></i>${t.deadline ?? ''}</span>
+                        <span class="badge bg-${prioClass} bg-opacity-25 text-${prioClass} border border-${prioClass}">${t.priority ?? ''}</span>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
             document.getElementById('resTasks').innerHTML = taskHtml;
 
-            const badges = data.participants.map(p => `<span class="badge bg-light text-dark border px-3 py-2 rounded-pill shadow-sm"><i class="bi bi-person-fill text-secondary me-1"></i>${p}</span>`).join('');
+            const participants = data.participants || [];
+            const badges = participants.map(p => `<span class="badge bg-light text-dark border px-3 py-2 rounded-pill shadow-sm"><i class="bi bi-person-fill text-secondary me-1"></i>${p}</span>`).join('');
             document.getElementById('resParticipants').innerHTML = badges;
         }
 
