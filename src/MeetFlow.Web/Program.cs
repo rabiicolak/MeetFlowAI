@@ -7,6 +7,8 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddScoped<IMeetingAnalysisService, MockMeetingAnalysisService>();
 builder.Services.AddScoped<IAudioTranscriptionService, MockAudioTranscriptionService>();
+builder.Services.AddScoped<IReportExportService, MockReportExportService>();
+builder.Services.AddScoped<IEmailService, MockEmailService>();
 
 var app = builder.Build();
 

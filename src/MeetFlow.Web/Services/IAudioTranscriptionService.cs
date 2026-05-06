@@ -5,6 +5,6 @@ namespace MeetFlow.Web.Services
 {
     public interface IAudioTranscriptionService
     {
-        Task<AudioTranscriptionResultViewModel> TranscribeAsync(IFormFile audioFile);
+        Task<AudioAnalysisResultViewModel> TranscribeAsync(IFormFile audioFile);
     }
 }

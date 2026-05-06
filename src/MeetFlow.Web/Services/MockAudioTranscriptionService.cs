@@ -3,12 +3,15 @@ using MeetFlow.Web.ViewModels;
 
 namespace MeetFlow.Web.Services
 {
-    // AI Skills Agent: Ses kaydı transkript akışı gerçek API entegrasyonuna hazır olacak şekilde mock servisle simüle edilmiştir.
+    // AI Skills Agent: Ses kayıtlarından toplantı transkripti üretimi mock AI pipeline ile simüle edilmiştir.
     public class MockAudioTranscriptionService : IAudioTranscriptionService
     {
-        public Task<AudioTranscriptionResultViewModel> TranscribeAsync(IFormFile audioFile)
+        public Task<AudioAnalysisResultViewModel> TranscribeAsync(IFormFile audioFile)
         {
-            var result = new AudioTranscriptionResultViewModel();
+            var result = new AudioAnalysisResultViewModel
+            {
+                CreatedAt = DateTime.UtcNow
+            };
 
             if (audioFile == null || audioFile.Length == 0)
             {
@@ -25,13 +28,31 @@ namespace MeetFlow.Web.Services
                 return Task.FromResult(result);
             }
 
-            // Mock transcription (Demo verisi)
             result.Success = true;
             result.Message = "Ses kaydı başarıyla metne dönüştürüldü.";
-            result.Transcript = "Rabia görevleri tamamlasın. Hatice finansal işleri yarına kadar halletsin.";
-            result.DurationEstimateSeconds = 35;
+            result.ConfidenceScore = 0.94;
+            result.DetectedLanguage = "tr-TR";
+
+            var fileName = audioFile.FileName.ToLowerInvariant();
+            
+            if (fileName.Contains("risk"))
+            {
+                result.Transcript = "Rabia görevleri tamamlasın. Hatice finansal raporu cuma gününe kadar hazırlasın. Sunucuda gecikme riski bulunuyor.";
+                result.DurationEstimateSeconds = 45;
+            }
+            else if (audioFile.Length > 1024 * 1024 * 5) // 5MB'dan büyükse uzun diyelim
+            {
+                result.Transcript = "Herkese merhaba, toplantıya başlayalım. Rabia görevleri tamamlasın. Hatice finansal işleri halletsin. Mehmet backend entegrasyonuna başlayacak. Projenin cuma gününe kadar bitmesi planlandı. Ayrıca bazı tasarımsal eksiklikler bir risk oluşturabilir, Can ilgilenecek.";
+                result.DurationEstimateSeconds = 120;
+            }
+            else
+            {
+                result.Transcript = "Toplantı başladı. Rabia görevleri yarına kadar tamamlayacak. Yeni tasarım onaylandı.";
+                result.DurationEstimateSeconds = 25;
+            }
 
             return Task.FromResult(result);
         }
     }
 }
+
