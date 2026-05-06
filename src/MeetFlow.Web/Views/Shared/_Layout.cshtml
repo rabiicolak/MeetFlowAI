@@ -10,12 +10,18 @@
     <link rel="stylesheet" href="~/MeetFlow.Web.styles.css" asp-append-version="true" />
     <style>
         body {
-            background-color: #f4f7f6;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         .navbar {
-            background-color: #ffffff;
-            border-bottom: 2px solid #e2e8f0;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
         }
         .navbar-brand {
             font-weight: 800;
@@ -25,29 +31,71 @@
         .nav-link {
             color: #4a5568 !important;
             font-weight: 500;
+            transition: color 0.3s ease;
         }
         .nav-link:hover {
             color: #0d6efd !important;
         }
         .footer {
-            background-color: #ffffff;
-            border-top: 1px solid #e2e8f0;
+            background-color: transparent;
             color: #718096;
+            margin-top: auto;
         }
         /* Common card styling for the app */
         .card {
-            border-radius: 0.75rem;
-            border: none;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+            background: rgba(255, 255, 255, 0.95);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .floating-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.4;
+            z-index: -1;
+        }
+        .blob-1 {
+            width: 300px;
+            height: 300px;
+            background: #0d6efd;
+            top: -50px;
+            left: -50px;
+        }
+        .blob-2 {
+            width: 250px;
+            height: 250px;
+            background: #20c997;
+            bottom: 100px;
+            right: -50px;
         }
     </style>
 </head>
 <body>
+    <div class="floating-blob blob-1"></div>
+    <div class="floating-blob blob-2"></div>
+
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm box-shadow mb-4 py-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm mb-4 py-3 sticky-top">
             <div class="container-fluid px-4">
                 <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
-                    <i class="bi bi-robot fs-4 me-2 text-primary"></i> MeetFlow AI
+                    <i class="bi bi-robot fs-4 me-2 text-primary"></i> <span class="gradient-text">MeetFlow AI</span>
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
@@ -70,17 +118,30 @@
             </div>
         </nav>
     </header>
-    <div class="container-fluid px-4">
+    <div class="container-fluid px-4 mb-5">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="footer text-muted py-3 mt-auto">
-        <div class="container-fluid px-4 text-center">
-            &copy; 2026 - MeetFlow AI
+    <footer class="footer py-3 text-center">
+        <div class="container-fluid px-4">
+            <small>&copy; 2026 - MeetFlow AI - Hackathon Demo</small>
         </div>
     </footer>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+        <div id="copyToast" class="toast align-items-center text-white bg-success border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body fw-bold d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill me-2 fs-5"></i> Rapor başarıyla panoya kopyalandı!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
