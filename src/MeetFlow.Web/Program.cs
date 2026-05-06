@@ -1,7 +1,12 @@
+using MeetFlow.Web.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddScoped<IMeetingAnalysisService, MockMeetingAnalysisService>();
+builder.Services.AddScoped<IAudioTranscriptionService, MockAudioTranscriptionService>();
 
 var app = builder.Build();
 
