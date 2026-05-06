@@ -1,6 +1,9 @@
-# Cursor Editor Rules
-# This file contains project-specific instructions for the AI in Cursor.
+# MeetFlow AI Rules
 
-- Use ASP.NET Core MVC patterns.
-- Follow folder-based layered architecture inside the MeetFlow.Web project.
-- Write modern, clean C# 12 code targeting .NET 8.
+- Do NOT touch existing `Services/*` files.
+- Do NOT touch `Controllers/HomeController.cs` and `Controllers/AudioController.cs`.
+- Do NOT touch `Views/Home/Index.cshtml` and `wwwroot/js/site.js`.
+- Preserve existing core logic and frontend layout.
+- Only make changes to newly assigned modules like Dashboard.
+- Make sure to leave `// AI Plan Agent` or `<!-- AI Plan Agent ... -->` comments for AI Traceability.
+- Always check `.github/ISSUE_TEMPLATE` before adding major features.
