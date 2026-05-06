@@ -1,3 +1,4 @@
+@model MeetFlow.Web.ViewModels.MeetingAnalysisRequestViewModel
 @{
     ViewData["Title"] = "Dashboard";
 }
@@ -125,26 +126,28 @@
                 <h5 class="card-title fw-bold text-dark"><i class="bi bi-journal-text me-2 text-primary"></i>Toplantı Metni</h5>
             </div>
             <div class="card-body d-flex flex-column">
-                <textarea id="meetingText" class="form-control mb-3 flex-grow-1 bg-white bg-opacity-75 border" style="min-height: 250px; resize: vertical;" placeholder="Lütfen toplantı deşifresini veya notlarınızı buraya yapıştırın..."></textarea>
-                
-                <div class="mb-4">
-                    <label class="form-label text-muted small fw-bold text-uppercase">Demo Senaryoları</label>
-                    <div class="d-flex flex-wrap gap-2">
-                        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm" onclick="loadDemo('software')">
-                            <i class="bi bi-code-slash me-1"></i>Yazılım
-                        </button>
-                        <button class="btn btn-outline-danger btn-sm rounded-pill px-3 shadow-sm" onclick="loadDemo('crisis')">
-                            <i class="bi bi-exclamation-triangle me-1"></i>Kriz
-                        </button>
-                        <button class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm" onclick="loadDemo('management')">
-                            <i class="bi bi-briefcase me-1"></i>Yönetim
-                        </button>
+                <form method="post" action="/Home/Analyze" class="d-flex flex-column flex-grow-1">
+                    <textarea name="MeetingText" id="MeetingText" class="form-control mb-3 flex-grow-1 bg-white bg-opacity-75 border" style="min-height: 250px; resize: vertical;" placeholder="Lütfen toplantı deşifresini veya notlarınızı buraya yapıştırın...">@(Model?.MeetingText)</textarea>
+                    
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Demo Senaryoları</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm" onclick="loadDemo('software')">
+                                <i class="bi bi-code-slash me-1"></i>Yazılım
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 shadow-sm" onclick="loadDemo('crisis')">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Kriz
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-sm rounded-pill px-3 shadow-sm" onclick="loadDemo('management')">
+                                <i class="bi bi-briefcase me-1"></i>Yönetim
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <button id="btnAnalyze" class="btn btn-primary w-100 py-3 fw-bold rounded-3 shadow" onclick="analyzeMeeting()">
-                    <i class="bi bi-magic me-2"></i>Analiz Et
-                </button>
+                    <button type="submit" id="btnAnalyze" class="btn btn-primary w-100 py-3 fw-bold rounded-3 shadow">
+                        <i class="bi bi-magic me-2"></i>Analiz Et
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -391,78 +394,11 @@
         function loadDemo(type) {
             const data = scenarios[type];
             if(data) {
-                document.getElementById('meetingText').value = data.text;
+                document.getElementById('MeetingText').value = data.text;
                 currentMockData = data.mockData;
             }
         }
 
-        async function analyzeMeeting() {
-            const text = document.getElementById('meetingText').value.trim();
-            if(!text) {
-                alert("Lütfen analiz etmek için bir toplantı metni girin.");
-                return;
-            }
-
-            // Start animation & loading state
-            document.getElementById('resultsContainer').style.display = 'none';
-            document.getElementById('emptyState').style.display = 'flex';
-            
-            document.getElementById('loadingIconContainer').style.display = 'none';
-            document.getElementById('loadingSpinner').style.display = 'inline-block';
-            
-            document.getElementById('emptyStateText').innerText = "Yapay zeka metni analiz ediyor...";
-            document.getElementById('emptyStateSubText').style.display = 'none';
-            document.getElementById('loadingProgressContainer').style.display = 'block';
-            
-            const btn = document.getElementById('btnAnalyze');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>İşleniyor...';
-
-            const loadingTexts = ["Modeller yükleniyor", "Metin ayrıştırılıyor", "NLP algoritmaları çalışıyor", "Sonuçlar derleniyor"];
-            let tIdx = 0;
-            const typingInterval = setInterval(() => {
-                tIdx = (tIdx + 1) % loadingTexts.length;
-                document.querySelector('.typing-text').innerText = loadingTexts[tIdx];
-            }, 600);
-
-            try {
-                const response = await fetch('/Home/Analyze', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ meetingText: text })
-                });
-
-                if (!response.ok) {
-                    throw new Error("Analiz sırasında hata oluştu.");
-                }
-
-                const data = await response.json();
-                clearInterval(typingInterval);
-                populateResults(data);
-                
-                // Hide loading, show results with fade-in
-                document.getElementById('emptyState').style.display = 'none';
-                
-                const resultsContainer = document.getElementById('resultsContainer');
-                resultsContainer.style.display = 'block';
-                resultsContainer.classList.add('fade-in');
-            } catch (error) {
-                clearInterval(typingInterval);
-                console.error(error);
-                alert("Analiz başarısız oldu.");
-            } finally {
-                // Reset button
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-magic me-2"></i>Analiz Et';
-                
-                // Reset empty state
-                document.getElementById('loadingIconContainer').style.display = 'block';
-                document.getElementById('loadingSpinner').style.display = 'none';
-                document.getElementById('emptyStateText').innerText = "Analiz Sonucu Bekleniyor";
-                document.getElementById('emptyStateSubText').style.display = 'block';
-                document.getElementById('loadingProgressContainer').style.display = 'none';
-            }
-        }
 
         function populateResults(data) {
             document.getElementById('resSummary').innerText = data.summary;
@@ -551,7 +487,7 @@
                         interimTranscript += event.results[i][0].transcript;
                     }
                 }
-                const textArea = document.getElementById('meetingText');
+                const textArea = document.getElementById('MeetingText');
                 textArea.value = finalTranscript + interimTranscript;
             };
 
@@ -599,8 +535,8 @@
             if (recognition) {
                 try {
                     // Kullanıcı daha önce bir şeyler yazmış/silmiş olabilir. Textarea value'sunu finalTranscript'e eşitle ki üstüne yazsın.
-                    finalTranscript = document.getElementById('meetingText').value; 
-                    if(finalTranscript.length > 0 && !finalTranscript.endsWith(" ")) {
+                    finalTranscript = document.getElementById('MeetingText').value; 
+                    if(finalTranscript && finalTranscript.length > 0 && !finalTranscript.endsWith(" ")) {
                         finalTranscript += " ";
                     }
                     recognition.start();
@@ -622,8 +558,22 @@
 
         function clearSpeechText() {
             finalTranscript = "";
-            document.getElementById('meetingText').value = "";
+            document.getElementById('MeetingText').value = "";
             document.getElementById('speechStatusText').innerText = "Metin temizlendi.";
+        }
+
+        @if (ViewBag.AnalysisResult != null)
+        {
+            <text>
+            document.addEventListener('DOMContentLoaded', function() {
+                var analysisData = @Html.Raw(Json.Serialize(ViewBag.AnalysisResult));
+                document.getElementById('emptyState').style.display = 'none';
+                var resultsContainer = document.getElementById('resultsContainer');
+                resultsContainer.style.display = 'block';
+                resultsContainer.classList.add('fade-in');
+                populateResults(analysisData);
+            });
+            </text>
         }
     </script>
 }

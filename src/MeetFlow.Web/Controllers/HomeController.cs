@@ -23,16 +23,17 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Analyze([FromBody] MeetingAnalysisRequestViewModel request)
+    public async Task<IActionResult> Analyze(MeetingAnalysisRequestViewModel model)
     {
-        if (request == null || string.IsNullOrWhiteSpace(request.MeetingText))
+        if (model == null || string.IsNullOrWhiteSpace(model.MeetingText))
         {
-            return BadRequest("Toplantı metni boş olamaz.");
+            return View("Index", model);
         }
 
-        var result = await _meetingAnalysisService.AnalyzeAsync(request.MeetingText);
+        var result = await _meetingAnalysisService.AnalyzeAsync(model.MeetingText);
         
-        return Json(result);
+        ViewBag.AnalysisResult = result;
+        return View("Index", model);
     }
 
     public IActionResult Privacy()
