@@ -23,22 +23,17 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Analyze(MeetingAnalysisRequestViewModel request)
+    public async Task<IActionResult> Analyze(MeetingAnalysisRequestViewModel model)
     {
-        if (!ModelState.IsValid)
+        if (model == null || string.IsNullOrWhiteSpace(model.MeetingText))
         {
-            return View("Index", request);
+            return View("Index", model);
         }
 
-        var result = await _meetingAnalysisService.AnalyzeAsync(request.MeetingText);
+        var result = await _meetingAnalysisService.AnalyzeAsync(model.MeetingText);
         
-        // Frontend tasarımı bozulmasın diye (eğer mevcutsa) ViewData veya ViewBag üzerinden aktarılabilir, 
-        // ya da doğrudan model olarak Index'e dönülebilir. 
-        // Ancak frontend tasarımı dokunulmamış haliyle AJAX ile çalışacaksa 
-        // bu metod normalde JSON dönmeliydi. Ama View dönmesi istendiği için:
         ViewBag.AnalysisResult = result;
-        
-        return View("Index", request);
+        return View("Index", model);
     }
 
     public IActionResult Privacy()

@@ -1,9 +1,16 @@
 using MeetFlow.Web.Services;
 
+using System.Text.Json;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+});
 
 builder.Services.AddScoped<IMeetingAnalysisService, MockMeetingAnalysisService>();
 builder.Services.AddScoped<IAudioTranscriptionService, MockAudioTranscriptionService>();
