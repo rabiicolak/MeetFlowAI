@@ -7,13 +7,13 @@
 <style>
     /* Custom Animations and Overrides */
     .fade-in { animation: fadeIn 0.8s ease forwards; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     
     .typing-text::after {
         content: '|';
         animation: blink 1s step-start infinite;
     }
-    @keyframes blink { 50% { opacity: 0; } }
+    @@keyframes blink { 50% { opacity: 0; } }
 
     .task-item:hover { background-color: #f8f9fa; border-radius: 0.5rem; }
     .analysis-history-card { cursor: pointer; border-left: 4px solid transparent; transition: all 0.2s; }
